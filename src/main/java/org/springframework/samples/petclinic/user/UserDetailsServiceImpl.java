@@ -18,7 +18,13 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 	public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
 		// 1. Find the user via the UserRepository
 		User user = userRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("No user found with email '" + email + "'.")); // TODO: Make the message generic
-		// 2. Convert your custom User model into the UserDetails object that Spring Security understands
+		
+		// 2. Block deleted accounts
+		if(user.getDeletedAt() != null) {
+			throw new UsernameNotFoundException("No user found with email '" + email + "'.");
+		}
+		
+		// 3. Convert your custom User model into the UserDetails object that Spring Security understands
 		return org.springframework.security.core.userdetails.User.builder()
 			.username(user.getEmail())
 			.password(user.getPassword()) // Spring Security will compare this HASH with the login password

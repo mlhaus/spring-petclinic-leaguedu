@@ -5,9 +5,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.i18n.CookieLocaleResolver;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 
+import java.time.Duration;
 import java.util.Locale;
 
 /**
@@ -29,10 +31,18 @@ public class WebConfiguration implements WebMvcConfigurer {
 	 * Defaults to English if nothing is specified.
 	 * @return session-based {@link LocaleResolver}
 	 */
+//	@Bean
+//	public LocaleResolver localeResolver() {
+//		SessionLocaleResolver resolver = new SessionLocaleResolver();
+//		resolver.setDefaultLocale(Locale.ENGLISH);
+//		return resolver;
+//	}
 	@Bean
 	public LocaleResolver localeResolver() {
-		SessionLocaleResolver resolver = new SessionLocaleResolver();
+		// Creates a cookie named "PREFERRED_LANGUAGE"
+		CookieLocaleResolver resolver = new CookieLocaleResolver("PREFERRED_LANGUAGE");
 		resolver.setDefaultLocale(Locale.ENGLISH);
+		resolver.setCookieMaxAge(Duration.ofDays(365)); // Remembers them for a year!
 		return resolver;
 	}
 

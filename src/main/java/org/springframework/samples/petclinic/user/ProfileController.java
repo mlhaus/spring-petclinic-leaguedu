@@ -1,5 +1,7 @@
 package org.springframework.samples.petclinic.user;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -7,6 +9,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -17,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.security.Principal;
+import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -58,6 +62,11 @@ public class ProfileController {
 			user.setPhone(formattedPhone);
 		}
 
+		String domain = email.substring(email.indexOf("@") + 1); // kirkwood.edu
+		String slug = domain.contains(".") ? domain.substring(0, domain.lastIndexOf(".")) : domain; // kirkwood
+		slug = slug.contains(".") ? slug.substring(slug.indexOf(".") + 1) : slug;
+		model.addAttribute("schoolSlug", slug);
+
 		model.addAttribute("user", user);
 		return "users/profile";
 	}
@@ -98,7 +107,7 @@ public class ProfileController {
 		currentUser.setLastName(updatedUser.getLastName());
 		currentUser.setNickname(updatedUser.getNickname());
 		currentUser.setEmail(updatedUser.getEmail());
-		
+
 		String submittedPhone = updatedUser.getPhone();
 		if (submittedPhone != null && !submittedPhone.trim().isEmpty()) {
 			currentUser.setPhone(submittedPhone.replaceAll("\\D", "")); // Strips all non-numbers
@@ -135,7 +144,37 @@ public class ProfileController {
 		}
 
 		redirectAttributes.addFlashAttribute("messageSuccess", "Your profile has been updated successfully");
+
+		String langCode = currentUser.getPreferredLanguage();
+		if(langCode != null) {
+			return "redirect:/users/profile?lang=" + langCode.toLowerCase();
+		}
+
 		return "redirect:/users/profile"; // This makes a new GET request
+	}
+
+	@PostMapping("/delete")
+	public String deleteAccount(Principal principal,
+								HttpServletRequest request,
+								HttpServletResponse response,
+								RedirectAttributes redirectAttributes) {
+		// Finding out who is logged in
+		String email = principal.getName();
+		// Get all of their data from the datbaase
+		User currentUser = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+		// Mark them as deleted
+		currentUser.setDeletedAt(LocalDateTime.now());
+		currentUser.setEmail("deleted_" + currentUser.getId() + email);
+		// Update the database
+		userRepository.save(currentUser);
+		// Log the user out
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		if (auth != null) {
+			new SecurityContextLogoutHandler().logout(request, response, auth);
+		}
+		// Redirect to the homepage with a farewall message
+		redirectAttributes.addFlashAttribute("messageSuccess", "Your account has been successfully deleted. We're sorry to see you go!");
+		return "redirect:/";
 	}
 
 

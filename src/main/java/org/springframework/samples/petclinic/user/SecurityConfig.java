@@ -31,18 +31,11 @@ public class SecurityConfig {
 		http
 			.csrf(csrf -> csrf.disable()) // Disable Cross-Site Request Forgery for API development
 			.authorizeHttpRequests(authorize -> authorize
-				// This allows unmapped paths to result in 404, and allows all web viewing.
-				.requestMatchers(HttpMethod.GET).permitAll()
+				// Public pages anyone can see
+				.requestMatchers("/", "/schools/**", "/register-student", "/css/**", "/images/**").permitAll()
 
 				// Require login for the profile and any other user settings
 				.requestMatchers("/users/profile", "/users/delete").authenticated()
-
-				// Allows guest users to make POST requests
-				.requestMatchers("/register-student",
-									"/login",
-									"/schools/new",
-									"/owners/new"
-				).permitAll()
 
 				// PROTECTED CATCH-ALL (This protects unlisted POST/PUT/DELETE, etc.)
 				.anyRequest().authenticated()
