@@ -32,7 +32,15 @@ public class SecurityConfig {
 			.csrf(csrf -> csrf.disable()) // Disable Cross-Site Request Forgery for API development
 			.authorizeHttpRequests(authorize -> authorize
 				// Public pages anyone can see
-				.requestMatchers("/", "/schools/**", "/register-student", "/css/**", "/images/**").permitAll()
+				.requestMatchers(
+					"/",
+					"/schools/**",
+					"/register-student",
+					"/css/**",
+					"/images/**",
+					"/recipes/**",
+					"/recipes/new"
+				).permitAll()
 
 				// Require login for the profile and any other user settings
 				.requestMatchers("/users/profile", "/users/delete").authenticated()
