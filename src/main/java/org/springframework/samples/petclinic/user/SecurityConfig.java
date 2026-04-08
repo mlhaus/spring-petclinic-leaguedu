@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -12,6 +13,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 
 @Configuration
+@EnableWebSecurity
 public class SecurityConfig {
 
 	@Bean
@@ -35,14 +37,22 @@ public class SecurityConfig {
 				.requestMatchers(
 					"/",
 					"/register-student",
-					"/resources/**",
+//					"/resources/**",
 					"/recipes/**",
-					"/recipes/new"
+					"/recipes/new",
+					"/owners/**",
+					"/pets/**",
+					"/vets/**",
+					"/vets.html"
 				).permitAll()
 				// Only SUPER_ADMIN users can add new schools
 				.requestMatchers("/schools/new").hasAuthority("MANAGE_ALL_SCHOOLS")
 				// All users can access the list of schools and individual schools
-				.requestMatchers(HttpMethod.GET, "/schools", "/schools/{slug:[a-zA-Z-]+}").permitAll()
+				.requestMatchers(HttpMethod.GET,
+					"/schools",
+					"/schools/{schoolId:\\d+}",
+					"/schools/{slug:[a-zA-Z0-9-]*[a-zA-Z-][a-zA-Z0-9-]*}").permitAll()
+
 
 				// Require login for the profile and any other user settings
 				.requestMatchers("/users/profile", "/users/delete").authenticated()

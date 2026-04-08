@@ -87,7 +87,7 @@ class MySqlIntegrationTests {
 	@Test
 	void testSchoolDetails() {
 		RestTemplate template = builder.rootUri("http://localhost:" + port).build();
-		ResponseEntity<String> result = template.exchange(RequestEntity.get("/schools/1").build(), String.class);
+		ResponseEntity<String> result = template.exchange(RequestEntity.get("/schools/kirkwood").build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody()).contains("Kirkwood Community College");
 	}

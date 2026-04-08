@@ -5,6 +5,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.samples.petclinic.user.SecurityConfig;
+import org.springframework.samples.petclinic.user.UserRepository;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.data.domain.Page;
@@ -17,6 +23,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -25,6 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Test class for the {@link SchoolController}
  */
 @WebMvcTest(SchoolController.class)
+@Import(SecurityConfig.class)
 class SchoolControllerTest {
 
 	private static final int TEST_SCHOOL_ID = 1;
@@ -34,6 +42,15 @@ class SchoolControllerTest {
 
 	@MockitoBean
 	private SchoolRepository schools;
+
+	@MockitoBean
+	private UserRepository userRepository;
+
+	@MockitoBean
+	private UserDetailsService userDetailsService;
+
+	@MockitoBean
+	private AuthenticationConfiguration authenticationConfiguration;
 
 	private School school;
 
@@ -69,7 +86,9 @@ class SchoolControllerTest {
 	@Test
 	@DisplayName("User clicks \"Add School\" -> GET /schools/new")
 	void testInitCreationForm() throws Exception {
-		mockMvc.perform(get("/schools/new"))
+		mockMvc.perform(get("/schools/new")
+				.with(user("super_admin@kirkwood.edu")
+					.authorities(new SimpleGrantedAuthority("MANAGE_ALL_SCHOOLS"))))
 			.andExpect(status().isOk())
 			.andExpect(view().name("schools/createOrUpdateSchoolForm"))
 			.andExpect(model().attributeExists("school"));
@@ -80,7 +99,9 @@ class SchoolControllerTest {
 	void testProcessCreationFormSuccess() throws Exception {
 		mockMvc.perform(post("/schools/new")
 				.param("name", "University of Iowa")
-				.param("domain", "uiowa.edu"))
+				.param("domain", "uiowa.edu")
+				.with(user("super_admin@kirkwood.edu")
+					.authorities(new SimpleGrantedAuthority("MANAGE_ALL_SCHOOLS"))))
 			.andExpect(status().is3xxRedirection())
 			.andExpect(redirectedUrl("/schools"));
 
@@ -93,7 +114,9 @@ class SchoolControllerTest {
 	void testProcessCreationFormHasErrors() throws Exception {
 		mockMvc.perform(post("/schools/new")
 				.param("name", "Bad School")
-				.param("domain", "")) // Empty domain should trigger @NotEmpty
+				.param("domain", "") // Empty domain should trigger @NotEmpty
+				.with(user("super_admin@kirkwood.edu")
+					.authorities(new SimpleGrantedAuthority("MANAGE_ALL_SCHOOLS"))))
 			.andExpect(status().isOk()) // 200 OK because we are re-rendering the form, not redirecting
 			.andExpect(model().attributeHasErrors("school"))
 			.andExpect(model().attributeHasFieldErrors("school", "domain"))

@@ -9,9 +9,17 @@
             th:classappend="${valid ? '' : 'is-invalid'}"
             th:field="*{__${name}__}"
             th:id="${name}">
-      <option th:each="opt : ${options}"
-              th:value="${opt.key}"
-              th:text="${opt.value}">Option</option>
+      <th:block th:if="${options instanceof T(java.util.Map)}">
+        <option th:each="opt : ${options}"
+                th:value="${opt.key}"
+                th:text="${opt.value}">Option</option>
+      </th:block>
+
+      <th:block th:unless="${options instanceof T(java.util.Map)}">
+        <option th:each="opt : ${options}"
+                th:value="${opt}"
+                th:text="${opt}">Option</option>
+      </th:block>
     </select>
 
     <div class="invalid-feedback" th:if="${!valid}" th:errors="*{__${name}__}">Error message</div>

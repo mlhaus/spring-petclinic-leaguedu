@@ -26,7 +26,28 @@
 
     <div class="col-lg-3">
 
-      <div th:if="${currentUser != null}" class="card shadow-sm border-primary">
+      <div th:if="${currentUser == null}" class="card shadow-sm">
+        <div class="card-body text-center">
+          <h5 class="card-title">Join the Action</h5>
+          <p class="card-text text-sm">Log in or register to join teams and view your player stats.</p>
+          <a th:href="@{/login}" class="btn btn-primary w-100 mb-2">Log In</a>
+          <a th:href="@{/register-student}" class="btn btn-outline-secondary w-100">Register</a>
+        </div>
+      </div>
+
+      <div th:if="${currentUser != null and !#strings.endsWith(currentUser.email, '@' + school.domain) and !#strings.endsWith(currentUser.email, '.' + school.domain)}" class="card shadow-sm border-warning">
+        <div class="card-header bg-warning text-dark">
+          <h5 class="mb-0">Access Restricted</h5>
+        </div>
+        <div class="card-body text-center">
+          <i class="fa fa-exclamation-triangle text-warning mb-2" style="font-size: 2rem;"></i>
+          <p class="card-text text-sm"
+             th:text="'You must have an active ' + ${school.domain} + ' email address to register for ' + ${school.name} + ' intramurals.'">
+          </p>
+        </div>
+      </div>
+
+      <div th:if="${currentUser != null and (#strings.endsWith(currentUser.email, '@' + school.domain) or #strings.endsWith(currentUser.email, '.' + school.domain))}" class="card shadow-sm border-primary">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
           <h5 class="mb-0">My Player Card</h5>
           <a th:href="@{/users/profile}" class="btn btn-sm btn-light">Edit</a>
@@ -34,17 +55,13 @@
 
         <div class="card-body">
           <th:block th:if="${!#strings.isEmpty(currentUser.firstName) or !#strings.isEmpty(currentUser.nickname)}">
-
             <h5 class="card-title text-primary">
-
-              <span th:if="${!#strings.isEmpty(currentUser.nickname)}"
-                th:text="${currentUser.nickname}">Nickname</span>
+            <span th:if="${!#strings.isEmpty(currentUser.nickname)}"
+                  th:text="${currentUser.nickname}">Nickname</span>
 
               <span th:if="${#strings.isEmpty(currentUser.nickname)}"
                     th:text="${currentUser.firstName + (!#strings.isEmpty(currentUser.lastName) ? ' ' + currentUser.lastName : '')}">First Last</span>
-
             </h5>
-
             <hr>
           </th:block>
 
@@ -63,21 +80,12 @@
           <div class="text-sm">
             <strong>Language:</strong>
             <span th:switch="${currentUser.preferredLanguage}">
-                            <span th:case="'EN'">English</span>
-                            <span th:case="'ES'">Spanish</span>
-                            <span th:case="'KO'">Korean</span>
-                            <span th:case="*">Not specified</span>
-                        </span>
+              <span th:case="'EN'">English</span>
+              <span th:case="'ES'">Spanish</span>
+              <span th:case="'KO'">Korean</span>
+              <span th:case="*">Not specified</span>
+          </span>
           </div>
-        </div>
-      </div>
-
-      <div th:unless="${currentUser != null}" class="card shadow-sm">
-        <div class="card-body text-center">
-          <h5 class="card-title">Join the Action</h5>
-          <p class="card-text text-sm">Log in or register to join teams and view your player stats.</p>
-          <a th:href="@{/login}" class="btn btn-primary w-100 mb-2">Log In</a>
-          <a th:href="@{/register-student}" class="btn btn-outline-secondary w-100">Register</a>
         </div>
       </div>
 

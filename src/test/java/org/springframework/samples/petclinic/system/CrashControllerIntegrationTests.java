@@ -32,6 +32,7 @@ import org.springframework.boot.jdbc.autoconfigure.DataSourceTransactionManagerA
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -40,7 +41,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
-
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
 /**
  * Integration Test for {@link CrashController}.
  *
@@ -92,10 +95,18 @@ class CrashControllerIntegrationTests {
 				"This application has no explicit mapping for");
 	}
 
-//	@SpringBootApplication(exclude = { DataSourceAutoConfiguration.class,
-//			DataSourceTransactionManagerAutoConfiguration.class, HibernateJpaAutoConfiguration.class })
-//	static class TestConfiguration {
-//
-//	}
+	@SpringBootApplication(exclude = { DataSourceAutoConfiguration.class,
+			DataSourceTransactionManagerAutoConfiguration.class, HibernateJpaAutoConfiguration.class })
+	@ComponentScan(excludeFilters = @ComponentScan.Filter(
+		type = org.springframework.context.annotation.FilterType.ANNOTATION,
+		classes = org.springframework.web.bind.annotation.ControllerAdvice.class))
+	static class TestConfiguration {
+		@Bean
+		public SecurityFilterChain testFilterChain(HttpSecurity http) throws Exception {
+			http.csrf(csrf -> csrf.disable())
+				.authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll());
+			return http.build();
+		}
+	}
 
 }
