@@ -40,13 +40,51 @@ public class SchoolController {
 		return "schools/createOrUpdateSchoolForm";
 	}
 
+	@GetMapping("/{id}/edit")
+	public String initUpdateForm(@PathVariable int id, Model model) {
+		School school = schoolRepository.findById(id)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "School not found"));
+		verifyEditPermissions(school);
+		model.addAttribute("school", school);
+		return "schools/createOrUpdateSchoolForm";
+	}
+
+	@PostMapping("/{id}/edit")
+	public String processUpdateForm(@Valid School school, BindingResult result, @PathVariable("id") int id) {
+		School existingSchool = schoolRepository.findById(id)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "School not found"));
+
+		verifyEditPermissions(existingSchool);
+
+		if (result.hasErrors()) {
+			return "schools/createOrUpdateSchoolForm";
+		}
+
+		// Prevent standard admins from modifying the status via form tampering
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		boolean isSuperAdmin = auth.getAuthorities().stream()
+			.anyMatch(a -> a.getAuthority().equals("MANAGE_ALL_SCHOOLS"));
+
+		if (!isSuperAdmin) {
+			school.setStatus(existingSchool.getStatus());
+		}
+
+		school.setId(id);
+		schoolRepository.save(school);
+
+		// Strip ".edu" for the redirect to match your slug regex [a-zA-Z-]+
+		String slug = school.getDomain().replace(".edu", "");
+		return "redirect:/schools/" + slug;
+	}
+
 	@PostMapping("/new")
 	public String processCreationForm(@Valid School school, BindingResult result) {
 		if (result.hasErrors()) {
 			return "schools/createOrUpdateSchoolForm";
 		}
 		schoolRepository.save(school);
-		return "redirect:/schools";
+		String slug = school.getDomain().replace(".edu", "");
+		return "redirect:/schools/" + slug;
 	}
 
 
@@ -71,6 +109,7 @@ public class SchoolController {
 		School school = schoolRepository.findById(schoolId)
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "School with id " + schoolId + " not found."));
 		mav.addObject(school);
+		mav.addObject("canEdit", checkEditPermissions(school));
 		return mav;
 	}
 
@@ -84,7 +123,7 @@ public class SchoolController {
 		School school = schoolRepository.findByDomain(fullDomain)
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "School with domain '" + fullDomain + "' not found."));
 		mav.addObject(school);
-
+		mav.addObject("canEdit", checkEditPermissions(school));
 		if (principal != null) {
 			userRepository.findByEmail(principal.getName()).ifPresent(user -> {
 
@@ -101,17 +140,14 @@ public class SchoolController {
 		return mav;
 	}
 
-	@GetMapping("/{id}/edit")
-	public String initUpdateForm(@PathVariable int id, Model model) {
-		School school = schoolRepository.findById(id)
-			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "School not found"));
-		verifyEditPermissions(school);
-		model.addAttribute("school", school);
-		return "schools/createOrUpdateSchoolForm";
-	}
-
-	private void verifyEditPermissions(School school) {
+	private boolean checkEditPermissions(School school) {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+		// Handle unauthenticated users safely
+		if (auth == null || !auth.isAuthenticated() || auth.getName().equals("anonymousUser")) {
+			return false;
+		}
+
 		String userEmail = auth.getName();
 
 		boolean isSuperAdmin = auth.getAuthorities().stream()
@@ -122,8 +158,19 @@ public class SchoolController {
 		boolean belongsToSchool = userEmail.endsWith("@" + school.getDomain()) ||
 			userEmail.endsWith("." + school.getDomain());
 
-		if (!isSuperAdmin && !(isSchoolAdmin && belongsToSchool)) {
+		return isSuperAdmin || (isSchoolAdmin && belongsToSchool);
+	}
+
+	private void verifyEditPermissions(School school) {
+		if (!checkEditPermissions(school)) {
 			throw new AccessDeniedException("You do not have permission to edit this school.");
+		}
+	}
+
+	@GetMapping("/bad")
+	public void badSchoolRequest() {
+		if (true) {
+			throw new RuntimeException("This is a simulated database failure to test the 500 page stack trace.");
 		}
 	}
 

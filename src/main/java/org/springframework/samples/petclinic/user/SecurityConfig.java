@@ -37,7 +37,7 @@ public class SecurityConfig {
 				.requestMatchers(
 					"/",
 					"/register-student",
-//					"/resources/**",
+					"/resources/**",
 					"/recipes/**",
 					"/recipes/new",
 					"/owners/**",

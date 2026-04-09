@@ -1,19 +1,33 @@
 <html xmlns:th="https://www.thymeleaf.org"
+      xmlns:sec="http://www.w3.org/1999/xhtml"
       th:replace="~{fragments/layout :: layout (~{::body},'schools')}">
 
 <body>
 
-<h2 th:text="#{addSchool}">Add School</h2>
+<h2 th:text="${school.id == null} ? 'Add School' : 'Update School'">Add School</h2>
 
-<form th:object="${school}" class="form-horizontal" id="add-school-form" method="post">
+<form th:object="${school}" 
+      class="form-horizontal" id="add-school-form" method="post"
+      th:action="${school.id == null} ? @{/schools/new} : @{|/schools/${school.id}/edit|}">
 
   <input th:replace="~{fragments/inputField :: input (#{label.school.name}, 'name', 'text')}" />
 
   <input th:replace="~{fragments/inputField :: input (#{label.school.domain}, 'domain', 'text')}" />
 
+
+  <div sec:authorize="hasAuthority('MANAGE_ALL_SCHOOLS')" class="mb-3">
+    <label for="status" class="form-label">School Status</label>
+    <select class="form-select" id="status" th:field="*{status}">
+      <option value="ACTIVE">Active</option>
+      <option value="INACTIVE">Inactive</option>
+      <option value="SUSPENDED">Suspended</option>
+    </select>
+  </div>
+
   <div class="form-group">
     <div class="col-sm-offset-2 col-sm-10">
-      <button class="btn btn-primary" type="submit" th:text="#{addSchool}">Add School</button>
+      <button class="btn btn-primary" type="submit" 
+              th:text="${school.id == null} ? 'Add School' : 'Update School'">Add School</button>
     </div>
   </div>
 
