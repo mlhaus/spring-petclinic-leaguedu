@@ -6,6 +6,10 @@
 
 <h2 th:text="${school.id == null} ? 'Add School' : 'Update School'">Add School</h2>
 
+<!--<div th:if="${#fields.hasAnyErrors()}" class="alert alert-danger">-->
+<!--  <p class="mb-0">Please correct the highlighted errors before submitting.</p>-->
+<!--</div>-->
+
 <form th:object="${school}" 
       class="form-horizontal" id="add-school-form" method="post"
       th:action="${school.id == null} ? @{/schools/new} : @{|/schools/${school.id}/edit|}">

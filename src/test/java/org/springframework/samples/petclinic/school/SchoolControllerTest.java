@@ -103,7 +103,7 @@ class SchoolControllerTest {
 				.with(user("super_admin@kirkwood.edu")
 					.authorities(new SimpleGrantedAuthority("MANAGE_ALL_SCHOOLS"))))
 			.andExpect(status().is3xxRedirection())
-			.andExpect(redirectedUrl("/schools"));
+			.andExpect(redirectedUrl("/schools/uiowa"));
 
 		// Verify that the repository.save() method was actually called
 		verify(schools).save(any(School.class));

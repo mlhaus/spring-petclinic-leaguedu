@@ -11,6 +11,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.samples.petclinic.school.School;
 import org.springframework.samples.petclinic.school.SchoolRepository;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.savedrequest.SavedRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -133,6 +134,20 @@ public class AuthController {
 
 	@GetMapping("/login")
 	public String initLoginForm(Model model, HttpSession session) {
+		SavedRequest savedRequest = (SavedRequest)session.getAttribute("SPRING_SECURITY_SAVED_REQUEST");
+		if(savedRequest != null) {
+			String attemptedUrl = savedRequest.getRedirectUrl();
+			String warnedUrl = (String) session.getAttribute("WARNED_URL");
+			if(!attemptedUrl.equals(warnedUrl)) {
+				if (attemptedUrl.contains("/users/profile")) {
+					model.addAttribute("messageWarning", "You must be logged in to edit your profile");
+				} else {
+					model.addAttribute("messageWarning", "Please login to access that page.");
+				}
+				session.setAttribute("WARNED_URL", attemptedUrl);
+			}
+		}
+
 		User user = new User();
 
 		String lastEmail = (String)session.getAttribute("LAST_EMAIL");

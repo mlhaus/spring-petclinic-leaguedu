@@ -115,7 +115,7 @@ public class SchoolController {
 
 	// Matches /schools/kirkwood
 
-	@GetMapping("/{slug:[a-zA-Z-]+}")
+	@GetMapping("/{slug:[a-zA-Z0-9-]*[a-zA-Z-][a-zA-Z0-9-]*}")
 	public ModelAndView showSchoolBySlug(@PathVariable("slug") String slug, Principal principal) {
 		// Reconstruct the domain (User asked to assume ".edu")
 		String fullDomain = slug + ".edu";

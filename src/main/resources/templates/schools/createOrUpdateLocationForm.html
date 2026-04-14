@@ -1,0 +1,59 @@
+<html xmlns:th="https://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout (~{::body},'schools')}">
+
+<body>
+
+<h2 th:text="${location.id == null} ? 'Add Location' : 'Update Location'">Add Location</h2>
+
+<form th:object="${location}" class="form-horizontal" id="add-location-form" method="post"
+      th:action="${location.id == null} ? @{|/schools/${school.id}/locations/new|} : @{|/schools/${school.id}/locations/${location.id}/edit|}">
+
+  <div th:if="${#fields.hasAnyErrors()}" class="alert alert-danger">
+    <p class="mb-0">Please correct the highlighted errors before submitting.</p>
+  </div>
+
+  <input th:replace="~{fragments/inputField :: input ('Name', 'name', 'text')}" />
+
+  <div class="mb-3">
+    <label for="parentLocation" class="form-label">Parent Location (Optional)</label>
+    <select class="form-select" id="parentLocation" th:field="*{parentLocation}">
+      <option value="">-- None --</option>
+      <option th:each="loc : ${parentLocations}"
+              th:value="${loc.id}"
+              th:text="${loc.name}">Parent Name</option>
+    </select>
+  </div>
+
+  <input th:replace="~{fragments/inputField :: input ('Address', 'address', 'text')}" />
+  <input th:replace="~{fragments/inputField :: input ('Description', 'description', 'text')}" />
+
+  <div class="row">
+    <div class="col-md-6">
+      <input th:replace="~{fragments/inputField :: input ('Latitude', 'latitude', 'text')}" />
+    </div>
+    <div class="col-md-6">
+      <input th:replace="~{fragments/inputField :: input ('Longitude', 'longitude', 'text')}" />
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <label for="status" class="form-label">Status</label>
+    <select class="form-select" id="status" th:field="*{status}">
+      <option value="ACTIVE">Active</option>
+      <option value="DRAFT">Draft</option>
+      <option value="COMING_SOON">Coming Soon</option>
+      <option value="CLOSED">Closed</option>
+    </select>
+  </div>
+
+  <div class="form-group mt-4">
+    <button class="btn btn-primary mt-0" type="submit"
+            th:text="${location.id == null} ? 'Add Location' : 'Update Location'">Add Location</button>
+
+    <a class="btn btn-outline-secondary ms-2" th:href="@{|/schools/${school.id}|}">Cancel</a>
+  </div>
+
+</form>
+
+</body>
+</html>
