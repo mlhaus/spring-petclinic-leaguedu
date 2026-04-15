@@ -20,7 +20,10 @@
       <option value="">-- None --</option>
       <option th:each="loc : ${parentLocations}"
               th:value="${loc.id}"
-              th:text="${loc.name}">Parent Name</option>
+              th:text="${loc.name}"
+              th:data-address="${loc.address ?: ''}"
+              th:data-lat="${loc.latitude ?: ''}"
+              th:data-lng="${loc.longitude ?: ''}">Parent Name</option>
     </select>
   </div>
 
@@ -54,6 +57,30 @@
   </div>
 
 </form>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const parentSelect = document.getElementById('parentLocation');
+    const addressInput = document.getElementById('address');
+    const latInput = document.getElementById('latitude');
+    const lngInput = document.getElementById('longitude');
+
+    parentSelect.addEventListener('change', function() {
+      const selectedOption = parentSelect.options[parentSelect.selectedIndex];
+
+      if (selectedOption.value !== "") {
+        const pulledAddress = selectedOption.getAttribute('data-address');
+        const pulledLat = selectedOption.getAttribute('data-lat');
+        const pulledLng = selectedOption.getAttribute('data-lng');
+
+        // Only overwrite if the text box is currently empty
+        if (!addressInput.value && pulledAddress) addressInput.value = pulledAddress;
+        if (!latInput.value && pulledLat) latInput.value = pulledLat;
+        if (!lngInput.value && pulledLng) lngInput.value = pulledLng;
+      }
+    });
+  });
+</script>
 
 </body>
 </html>
