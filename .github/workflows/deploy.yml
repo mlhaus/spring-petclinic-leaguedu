@@ -23,7 +23,7 @@ jobs:
       # 3. Build the JAR file with Gradle
       # We skip tests here to speed it up, but you can remove '-x test' to be safer
       - name: Build with Gradle
-        run: ./gradlew clean bootJar -x test -x jar
+        run: ./gradlew clean bootJar -x jar
 
       # 4. Set up Docker Buildx (required for modern Docker builds)
       - name: Set up Docker Buildx
@@ -42,20 +42,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/athleagues:v${{ github.run_number }}
-
-      # 7. Log in to Azure
-      - name: Log in to Azure
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      # 8. Tell Azure to pull the new image
-      - name: Update Azure Container App
-        run: |
-          az config set extension.use_dynamic_install=yes_without_prompt
-          az containerapp update \
-            --name petclinic-app \
-            --resource-group petclinic-rg \
-            --image ${{ secrets.DOCKERHUB_USERNAME }}/athleagues:v${{ github.run_number }}
-
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/timberntools:v${{ github.run_number }}
