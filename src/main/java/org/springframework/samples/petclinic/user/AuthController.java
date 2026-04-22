@@ -24,18 +24,38 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import java.security.Principal;
 import java.util.Optional;
 
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 @Controller
 public class AuthController {
 	private final UserService userService;
 	private final SchoolRepository schoolRepository;
 	private final AuthenticationManager authenticationManager; // Add this field
+	private final UserRepository userRepository;
+	private final EmailService emailService;
+
 
 	// Add to Constructor
-	public AuthController(UserService userService, SchoolRepository schoolRepository, AuthenticationManager authenticationManager) {
+	public AuthController(UserService userService,
+						  SchoolRepository schoolRepository,
+						  AuthenticationManager authenticationManager
+						  UserRepository userRepository, EmailService emailService)
+	{
 		this.userService = userService;
 		this.schoolRepository = schoolRepository;
 		this.authenticationManager = authenticationManager;
+		this.userRepository = userRepository;
+		this.emailService = emailService;
 	}
+
+	@Value("${app.base-url:http://localhost:8080}")
+	private String baseUrl;
 
 	@GetMapping("/register-student")
 	public String initRegisterForm(Model model) {
@@ -158,5 +178,42 @@ public class AuthController {
 		model.addAttribute("user", user);
 		return "auth/loginForm";
 	}
+
+	@GetMapping("/forgot-password")
+	public String showForgotPasswordForm() {
+		return "auth/forgotPasswordForm";
+	}
+
+	@PostMapping("/forgot-password")
+	public String processForgotPassword(@RequestParam("email") String email, RedirectAttributes redirectAttributes) {
+
+		Optional<User> userOptional = userRepository.findByEmail(email);
+
+		if (userOptional.isPresent()) {
+			User user = userOptional.get();
+
+			// 1. Generate a secure token
+			String token = UUID.randomUUID().toString();
+
+			// 2. Save this token and an expiration timestamp (15 minutes from now)
+			user.setResetToken(token);
+			user.setResetTokenExpiresAt(LocalDateTime.now().plusMinutes(15));
+			userRepository.save(user);
+
+			// 3. Build the dynamic reset link
+			String resetLink = baseUrl + "/reset-password?token=" + token;
+
+			// 4. Use your Azure service to email the link
+			// Assuming your service has a method like this:
+			emailService.sendPasswordResetEmail(user.getEmail(), resetLink);
+		}
+
+		// Always return a generic success message to prevent "email enumeration" security risks.
+		// (Hackers can't use this form to guess which emails are registered in your database).
+		redirectAttributes.addFlashAttribute("messageSuccess", "If an account with that email exists, a password reset link has been sent.");
+		return "redirect:/login";
+	}
+
+
 
 }

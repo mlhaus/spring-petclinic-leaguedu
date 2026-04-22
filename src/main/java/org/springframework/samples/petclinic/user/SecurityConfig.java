@@ -43,7 +43,9 @@ public class SecurityConfig {
 					"/owners/**",
 					"/pets/**",
 					"/vets/**",
-					"/vets.html"
+					"/vets.html",
+					"/forgot-password",
+					"/reset-password"
 				).permitAll()
 				// Only SUPER_ADMIN users can add new schools
 				.requestMatchers("/schools/new").hasAuthority("MANAGE_ALL_SCHOOLS")
