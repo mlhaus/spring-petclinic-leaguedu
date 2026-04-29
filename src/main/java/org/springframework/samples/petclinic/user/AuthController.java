@@ -44,7 +44,7 @@ public class AuthController {
 	// Add to Constructor
 	public AuthController(UserService userService,
 						  SchoolRepository schoolRepository,
-						  AuthenticationManager authenticationManager
+						  AuthenticationManager authenticationManager,
 						  UserRepository userRepository, EmailService emailService)
 	{
 		this.userService = userService;
@@ -196,16 +196,16 @@ public class AuthController {
 			String token = UUID.randomUUID().toString();
 
 			// 2. Save this token and an expiration timestamp (15 minutes from now)
-			user.setResetToken(token);
-			user.setResetTokenExpiresAt(LocalDateTime.now().plusMinutes(15));
+//			user.setResetToken(token);
+//			user.setResetTokenExpiresAt(LocalDateTime.now().plusMinutes(15));
 			userRepository.save(user);
 
 			// 3. Build the dynamic reset link
-			String resetLink = baseUrl + "/reset-password?token=" + token;
+//			String resetLink = baseUrl + "/reset-password?token=" + token;
 
 			// 4. Use your Azure service to email the link
 			// Assuming your service has a method like this:
-			emailService.sendPasswordResetEmail(user.getEmail(), resetLink);
+//			emailService.sendPasswordResetEmail(user.getEmail(), resetLink);
 		}
 
 		// Always return a generic success message to prevent "email enumeration" security risks.

@@ -18,11 +18,10 @@ import java.util.List;
 @UniqueDomain
 @Getter
 @Setter
-// Intercept the delete command and turn it into an update
 @SQLDelete(sql = "UPDATE schools SET deleted_at = NOW() WHERE id = ?")
-// Automatically filter out deleted rows when reading data
 @SQLRestriction("deleted_at IS NULL")
 public class School extends NamedEntity {
+
 	@Column(name = "domain", unique = true)
 	@NotEmpty
 	private String domain;
@@ -47,7 +46,16 @@ public class School extends NamedEntity {
 		location.setSchool(this);
 		getLocations().add(location);
 	}
+
 	public enum SchoolStatus {
 		ACTIVE, INACTIVE, SUSPENDED
+	}
+
+	// NEW METHOD
+	public String getSlug() {
+		if (this.domain == null) {
+			return "";
+		}
+		return this.domain.replace(".edu", "");
 	}
 }
