@@ -76,6 +76,23 @@ public class User extends BaseEntity {
 	@Column(name = "deleted_at")
 	private LocalDateTime deletedAt;
 
+	@Column(name = "reset_token", unique = true)
+	private String resetToken;
+
+	@Column(name = "reset_token_expires_at")
+	private LocalDateTime resetTokenExpiresAt;
+
+	// Optional helper methods for cleaner controller logic
+	public boolean isResetTokenValid() {
+		return this.resetTokenExpiresAt != null && LocalDateTime.now().isBefore(this.resetTokenExpiresAt);
+	}
+
+	public void clearResetToken() {
+		this.resetToken = null;
+		this.resetTokenExpiresAt = null;
+	}
+
+
 	// Many-to-Many Relationship with Role
 	@ManyToMany(fetch = FetchType.EAGER) // Fetch roles immediately when a user is loaded
 	@JoinTable(
