@@ -9,7 +9,6 @@ import java.util.List;
 public interface LeagueRepository extends JpaRepository<League, Integer> {
 
 	List<League> findBySchoolIdOrderByLeagueStartDesc(Integer schoolId);
-
 	@Query("SELECT l FROM League l WHERE l.school.id = :schoolId " +
 		"AND l.status <> :draftStatus " +
 		"AND (l.leagueEnd IS NULL OR l.leagueEnd > :now) " +
@@ -18,3 +17,5 @@ public interface LeagueRepository extends JpaRepository<League, Integer> {
 								   @Param("draftStatus") League.LeagueStatus draftStatus,
 								   @Param("now") LocalDateTime now);
 }
+
+
