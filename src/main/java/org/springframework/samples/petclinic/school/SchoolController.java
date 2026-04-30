@@ -118,41 +118,26 @@ public class SchoolController {
 	// Matches /schools/kirkwood
 	@GetMapping("/{slug:[a-zA-Z0-9-]*[a-zA-Z-][a-zA-Z0-9-]*}")
 	public ModelAndView showSchoolBySlug(@PathVariable("slug") String slug, Principal principal) {
-
+		// ... code to find school by domain ...
 		String fullDomain = slug + ".edu";
+		School school = schoolRepository.findByDomain(fullDomain)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Not Found"));
 
 		ModelAndView mav = new ModelAndView("schools/schoolDetails");
-
-		School school = schoolRepository.findByDomain(fullDomain)
-			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "School with domain '" + fullDomain + "' not found."));
-
 		mav.addObject("school", school);
 		mav.addObject("canEdit", checkEditPermissions(school));
 
-		if (principal != null) {
-			userRepository.findByEmail(principal.getName()).ifPresent(user -> {
-				String phone = user.getPhone();
-				if (phone != null && phone.length() == 10) {
-					user.setPhone(phone.replaceFirst("(\\d{3})(\\d{3})(\\d{4})", "($1) $2-$3"));
-				}
-				mav.addObject("currentUser", user);
-			});
-		}
-
-		// ✅ Fetch leagues based on permissions
+		// Fetch the appropriate leagues
 		List<League> leagues;
 		if (checkEditPermissions(school)) {
+			// Admins see everything, including DRAFTS
 			leagues = leagueRepository.findBySchoolIdOrderByLeagueStartDesc(school.getId());
 		} else {
-			leagues = leagueRepository.findActiveLeagues(
-				school.getId(),
-				League.LeagueStatus.DRAFT,
-				LocalDateTime.now()
-			);
+			// Guests/Students see only Active/Public leagues
+			leagues = leagueRepository.findActiveLeagues(school.getId(), League.LeagueStatus.DRAFT, LocalDateTime.now());
 		}
 
 		mav.addObject("leagues", leagues);
-
 		return mav;
 	}
 

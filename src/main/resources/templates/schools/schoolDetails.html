@@ -5,30 +5,43 @@
 <body>
 
 <div class="container mt-4">
-
-  <div class="mb-4 pb-2 border-bottom d-flex justify-content-between align-items-center">
-    <h1><span th:text="${school.name}">School Name</span> Intramurals</h1>
-    <a th:if="${canEdit}"
-       th:href="@{|/schools/${school.id}/edit|}"
-       class="btn btn-outline-primary">Edit School
-    </a>
+  <div class="d-flex justify-content-between align-items-center">
+    <h2>Intramural Leagues</h2>
+    <a th:href="@{|/schools/${school.id}/leagues/new|}"
+       th:if="${canEdit}"
+       class="btn btn-primary mt-0">Create League</a>
   </div>
 
-  <div class="row">
+  <table th:if="${!leagues.isEmpty()}" class="table table-striped table-hover mt-3">
+    <thead>
+    <tr>
+      <th>League Name</th>
+      <th>Type</th>
+      <th>Registration Deadline</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="league : ${leagues}">
+      <td th:text="${league.name}">League Name</td>
+      <td th:text="${#strings.capitalize(league.type.name().toLowerCase())}">Coed</td>
+      <td th:text="${league.registrationEnd != null ? #temporals.format(league.registrationEnd, 'MMM dd, yyyy') : 'TBD'}">Oct 31</td>
+      <td>
+          <span th:text="${league.status}"
+                class="badge"
+                th:classappend="${league.status.name() == 'DRAFT' ? 'bg-warning text-dark' : 'bg-success'}">
+            ACTIVE
+          </span>
+      </td>
+      <td>
+        <a th:href="@{|/schools/${school.id}/leagues/${league.id}|}" class="btn btn-sm btn-outline-primary">View Info</a>
+      </td>
+    </tr>
+    </tbody>
+  </table>
 
-    <div class="col-lg-9 mb-4">
-
-      <!-- ========================= -->
-      <!-- 🔥 NEW LEAGUE SECTION HERE -->
-      <!-- ========================= -->
-
-      <div class="d-flex justify-content-between align-items-center">
-        <h2>Intramural Leagues</h2>
-        <a th:href="@{|/schools/${school.id}/leagues/new|}"
-           th:if="${canEdit}"
-           class="btn btn-primary mt-0">Create League</a>
-      </div>
-
-      <!-- Empty-state message -->
-      <p th:if="${leagues.isEmpty()}" class="text-muted mt-3">
-        There are no active leagues
+  <div th:if="${leagues.isEmpty()}" class="alert alert-info mt-3">
+    <p class="mb-0">There are no active leagues at this time.</p>
+  </div>
+</div>
