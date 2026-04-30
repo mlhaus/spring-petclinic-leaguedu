@@ -5,6 +5,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.samples.petclinic.league.League;
+import org.springframework.samples.petclinic.league.LeagueRepository;
 import org.springframework.samples.petclinic.user.UserRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,27 +17,32 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 @Controller
 @RequestMapping("/schools")
 public class SchoolController {
+
 	private final SchoolRepository schoolRepository;
 	private final UserRepository userRepository;
+	private final LeagueRepository leagueRepository;   // ✅ NEW
 
-	public SchoolController(SchoolRepository schoolRepository, UserRepository userRepository) {
+	// ✅ Inject LeagueRepository
+	public SchoolController(SchoolRepository schoolRepository,
+							UserRepository userRepository,
+							LeagueRepository leagueRepository) {
 		this.schoolRepository = schoolRepository;
 		this.userRepository = userRepository;
+		this.leagueRepository = leagueRepository;
 	}
 
 	@GetMapping("/new")
 	public String initCreationForm(Map<String, School> model) {
-		// Instaniate a default object
 		School school = new School();
-		// Add school to input model so Thymeleaf can bind data to it
 		model.put("school", school);
 		return "schools/createOrUpdateSchoolForm";
 	}
@@ -60,7 +67,6 @@ public class SchoolController {
 			return "schools/createOrUpdateSchoolForm";
 		}
 
-		// Prevent standard admins from modifying the status via form tampering
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		boolean isSuperAdmin = auth.getAuthorities().stream()
 			.anyMatch(a -> a.getAuthority().equals("MANAGE_ALL_SCHOOLS"));
@@ -72,9 +78,7 @@ public class SchoolController {
 		school.setId(id);
 		schoolRepository.save(school);
 
-		// Strip ".edu" for the redirect to match your slug regex [a-zA-Z-]+
-		String slug = school.getDomain().replace(".edu", "");
-		return "redirect:/schools/" + slug;
+		return "redirect:/schools/" + school.getSlug();
 	}
 
 	@PostMapping("/new")
@@ -83,14 +87,11 @@ public class SchoolController {
 			return "schools/createOrUpdateSchoolForm";
 		}
 		schoolRepository.save(school);
-		String slug = school.getDomain().replace(".edu", "");
-		return "redirect:/schools/" + slug;
+		return "redirect:/schools/" + school.getSlug();
 	}
-
 
 	@GetMapping
 	public String showSchoolList(@RequestParam(defaultValue = "1") int page, Model model) {
-		// Pagination setup (5 items per page)
 		Pageable pageable = PageRequest.of(page - 1, 5);
 		Page<School> schoolPage = schoolRepository.findAll(pageable);
 
@@ -102,48 +103,47 @@ public class SchoolController {
 		return "schools/schoolList";
 	}
 
-	// Matches /schools/1
+	// ❌ OLD METHOD REMOVED:
+	// @GetMapping("/{schoolId:\\d+}") public ModelAndView showSchool(...) { ... }
+
+	// ✅ NEW: redirect numeric ID → slug
 	@GetMapping("/{schoolId:\\d+}")
-	public ModelAndView showSchool(@PathVariable("schoolId") int schoolId) {
-		ModelAndView mav = new ModelAndView("schools/schoolDetails");
+	public String redirectToSlug(@PathVariable("schoolId") int schoolId) {
 		School school = schoolRepository.findById(schoolId)
-			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "School with id " + schoolId + " not found."));
-		mav.addObject(school);
-		mav.addObject("canEdit", checkEditPermissions(school));
-		return mav;
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "School not found"));
+
+		return "redirect:/schools/" + school.getSlug();
 	}
 
 	// Matches /schools/kirkwood
-
 	@GetMapping("/{slug:[a-zA-Z0-9-]*[a-zA-Z-][a-zA-Z0-9-]*}")
 	public ModelAndView showSchoolBySlug(@PathVariable("slug") String slug, Principal principal) {
-		// Reconstruct the domain (User asked to assume ".edu")
+		// ... code to find school by domain ...
 		String fullDomain = slug + ".edu";
-		ModelAndView mav = new ModelAndView("schools/schoolDetails");
 		School school = schoolRepository.findByDomain(fullDomain)
-			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "School with domain '" + fullDomain + "' not found."));
-		mav.addObject(school);
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Not Found"));
+
+		ModelAndView mav = new ModelAndView("schools/schoolDetails");
+		mav.addObject("school", school);
 		mav.addObject("canEdit", checkEditPermissions(school));
-		if (principal != null) {
-			userRepository.findByEmail(principal.getName()).ifPresent(user -> {
 
-				// Format the 10-digit database phone number for display
-				String phone = user.getPhone();
-				if (phone != null && phone.length() == 10) {
-					user.setPhone(phone.replaceFirst("(\\d{3})(\\d{3})(\\d{4})", "($1) $2-$3"));
-				}
-
-				mav.addObject("currentUser", user);
-			});
+		// Fetch the appropriate leagues
+		List<League> leagues;
+		if (checkEditPermissions(school)) {
+			// Admins see everything, including DRAFTS
+			leagues = leagueRepository.findBySchoolIdOrderByLeagueStartDesc(school.getId());
+		} else {
+			// Guests/Students see only Active/Public leagues
+			leagues = leagueRepository.findActiveLeagues(school.getId(), League.LeagueStatus.DRAFT, LocalDateTime.now());
 		}
 
+		mav.addObject("leagues", leagues);
 		return mav;
 	}
 
 	private boolean checkEditPermissions(School school) {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-		// Handle unauthenticated users safely
 		if (auth == null || !auth.isAuthenticated() || auth.getName().equals("anonymousUser")) {
 			return false;
 		}
@@ -169,9 +169,6 @@ public class SchoolController {
 
 	@GetMapping("/bad")
 	public void badSchoolRequest() {
-		if (true) {
-			throw new RuntimeException("This is a simulated database failure to test the 500 page stack trace.");
-		}
+		throw new RuntimeException("This is a simulated database failure to test the 500 page stack trace.");
 	}
-
 }

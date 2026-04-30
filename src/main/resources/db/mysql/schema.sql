@@ -144,3 +144,37 @@ CREATE TABLE IF NOT EXISTS recipes
   constraint id unique (id),
   constraint internal_notes unique (internal_notes)
 );
+
+
+CREATE TABLE IF NOT EXISTS leagues (
+                                     id INT AUTO_INCREMENT PRIMARY KEY,
+                                     school_id INT NOT NULL,
+                                     location_id INT,
+                                     user_id INT,
+                                     name VARCHAR(255) NOT NULL,
+                                     description TEXT,
+                                     registration_start DATETIME,
+                                     registration_end DATETIME,
+                                     league_start DATETIME,
+                                     league_end DATETIME,
+                                     is_public TINYINT DEFAULT 1,
+                                     type ENUM('MALE', 'FEMALE', 'COED') NOT NULL,
+                                     capacity INT,
+                                     capacity_type ENUM('TEAM', 'INDIVIDUAL') NOT NULL,
+                                     fee DECIMAL(6,2),
+                                     status_id ENUM('DRAFT', 'ACTIVE', 'INACTIVE', 'POSTPONED', 'CANCELLED', 'PAST') DEFAULT 'DRAFT',
+                                     copied_from_id INT NULL,
+                                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                                     deleted_at DATETIME,
+
+                                     CONSTRAINT fk_leagues_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
+                                     CONSTRAINT fk_leagues_location FOREIGN KEY (location_id) REFERENCES locations(id) ON DELETE SET NULL,
+                                     CONSTRAINT fk_leagues_manager FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+                                     CONSTRAINT fk_leagues_copied_from FOREIGN KEY (copied_from_id) REFERENCES leagues(id) ON DELETE SET NULL,
+
+                                     INDEX idx_leagues_school_status (school_id, status_id),
+
+  -- ✅ Prevent duplicate leagues per school
+                                     UNIQUE KEY uq_leagues_school_name (school_id, name)
+);

@@ -146,3 +146,47 @@ VALUES
   ('Beef, Tortilla, Salsa', 'Cook beef, assemble taco.', 'Main Course', 'Mexican', 'Meat-based', 'Street style'),
   ('Lentils, Carrots, Curry Powder', 'Simmer until soft.', 'Soup', 'Indian', 'Vegan', 'Healthy Dal'),
   ('Zucchini, Garlic, Olive Oil', 'Sauté zucchini noodles.', 'Main Course', 'Italian', 'Vegan', 'Low carb option');
+
+
+-- Create a League
+INSERT IGNORE INTO leagues
+(school_id, location_id, user_id, name, description, registration_start, registration_end, league_start, league_end, is_public, type, capacity, capacity_type, fee, status_id)
+VALUES
+  (
+    1,
+    3,
+    (SELECT id FROM users WHERE email = 'brett.baumgart@kirkwood.edu'),
+    'Fall 2026 5v5 Basketball',
+    'Competitive 5-on-5 men''s basketball league.',
+    '2026-08-01 08:00:00',
+    '2026-08-31 23:59:59',
+    '2026-09-07 18:00:00',
+    '2026-11-15 22:00:00',
+    1,
+    'MALE',
+    12,
+    'TEAM',
+    50.00,
+    'ACTIVE'
+  );
+
+INSERT IGNORE INTO leagues
+(school_id, location_id, user_id, name, description, registration_start, registration_end, league_start, league_end, is_public, type, capacity, capacity_type, fee, status_id)
+VALUES
+  (
+    1,
+    3,
+    (SELECT id FROM users WHERE email = 'brett.baumgart@kirkwood.edu'),
+    'Fall 2026 5v5 Basketball',
+    'Competitive 5-on-5 men''s basketball league.',
+    '2026-08-01 08:00:00',
+    '2026-08-31 23:59:59',
+    '2026-09-07 18:00:00',
+    '2026-11-15 22:00:00',
+    1,
+    'MALE',
+    12,
+    'TEAM',
+    50.00,
+    'ACTIVE'
+  );
